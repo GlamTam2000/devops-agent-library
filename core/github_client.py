@@ -113,3 +113,24 @@ class GitHubClient:
         if existing:
             return self.update_comment(repo, existing["id"], body)
         return self.post_comment(repo, pr_number, body)
+
+    # -------------------------------------------------------------------- Merge
+
+    def merge_pr(
+        self,
+        repo: str,
+        pr_number: int,
+        method: str = "squash",
+        commit_title: str | None = None,
+    ) -> dict[str, Any]:
+        """Merge a PR. GitHub enforces branch-protection rules server-side —
+        if approvals or checks are required and unsatisfied, this will 405."""
+        payload: dict[str, Any] = {"merge_method": method}
+        if commit_title:
+            payload["commit_title"] = commit_title
+        r = self._session.put(
+            f"{self.api_url}/repos/{repo}/pulls/{pr_number}/merge",
+            json=payload,
+        )
+        r.raise_for_status()
+        return r.json()

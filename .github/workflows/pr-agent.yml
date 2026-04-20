@@ -5,13 +5,13 @@ on:
     types: [opened, synchronize, reopened]
     
 # Minimum permissions needed:
-#   contents: read        — to check out the repo
-#   pull-requests: write  — to post the review comment
+#   contents: write       — required only when auto_merge is enabled (merging writes to the branch)
+#   pull-requests: write  — to post the review comment and call the merge API
 #   issues: write         — PR comments are issue comments under the hood
 #   models: read          — grants access to GitHub Models inference
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
   models: read

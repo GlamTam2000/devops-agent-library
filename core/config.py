@@ -33,6 +33,7 @@ class AgentConfig:
     api_base_url: str = "https://models.github.ai/inference"
     max_diff_lines: int = 2000
     dry_run: bool = False
+    auto_merge: bool = False
     analyzers: dict[str, bool] = field(default_factory=lambda: dict(DEFAULT_ANALYZERS))
     audit_log_path: str = "agent-audit.jsonl"
 
@@ -54,6 +55,8 @@ class AgentConfig:
             data["api_base_url"] = v
         if v := os.environ.get("AGENTS_DRY_RUN"):
             data["dry_run"] = v.lower() in ("1", "true", "yes", "on")
+        if v := os.environ.get("AGENTS_AUTO_MERGE"):
+            data["auto_merge"] = v.lower() in ("1", "true", "yes", "on")
         if v := os.environ.get("AGENTS_MAX_DIFF_LINES"):
             data["max_diff_lines"] = int(v)
 

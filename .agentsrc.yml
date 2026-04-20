@@ -26,6 +26,14 @@ max_diff_lines: 2000
 # Useful for first-run testing. Override per-invocation with --dry-run.
 dry_run: false
 
+# If true, after posting the review comment the agent will merge the PR iff:
+#   - PR is mergeable (no git conflict)
+#   - zero HIGH-severity findings in the deterministic security scan
+# Branch-protection rules (required approvals / checks) are enforced server-side
+# by GitHub — on a protected repo this no-ops until a human approves.
+# Workflow permissions must include `contents: write` for this to work.
+auto_merge: true
+
 # Per-analyzer toggles. Disable any you don't want in a specific repo.
 # (E.g. a docs-only repo probably doesn't need the security analyzer.)
 analyzers:
