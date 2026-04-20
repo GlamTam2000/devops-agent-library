@@ -1,0 +1,59 @@
+name: PR Agent
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    
+# Minimum permissions needed:
+#   contents: read        — to check out the repo
+#   pull-requests: write  — to post the review comment
+#   issues: write         — PR comments are issue comments under the hood
+#   models: read          — grants access to GitHub Models inference
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  models: read
+
+# Don't run concurrent copies on the same PR when multiple commits land fast
+concurrency:
+  group: pr-agent-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    # Skip draft PRs and dependabot bumps unless you want them reviewed too
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run PR agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m agents.pr_agent.main \
+            --repo "${{ github.repository }}" \
+            --pr   "${{ github.event.pull_request.number }}"
+
+      - name: Upload audit log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-agent-audit-${{ github.event.pull_request.number }}
+          path: agent-audit.jsonl
+          if-no-files-found: ignore
+          retention-days: 30

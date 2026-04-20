@@ -1,0 +1,39 @@
+# ------------------------------------------------------------------------------
+# DevOps Agents — per-repo configuration
+# ------------------------------------------------------------------------------
+# Drop this file at the root of any repo that consumes the agents. Everything
+# here can also be overridden via AGENTS_* environment variables (useful for
+# swapping models in a workflow without touching the repo file).
+# ------------------------------------------------------------------------------
+
+# Model to use. Must be in your org's GitHub Models allow-list.
+# Examples:
+#   openai/gpt-4.1
+#   openai/gpt-4o-mini          # cheaper, fine for summarise/tests_docs
+#   anthropic/claude-sonnet-4   # if Lloyds has Anthropic via BYOK
+#   meta/llama-3.3-70b-instruct
+model: openai/gpt-4.1
+
+# Inference endpoint. Only change this if Lloyds proxies GitHub Models via
+# an internal gateway. The default works on github.com and standard GHEC.
+api_base_url: https://models.github.ai/inference
+
+# Hard cap on diff size sent to the LLM. Huge PRs are human-review territory;
+# truncating gives a partial review with a note rather than a 40k-token bill.
+max_diff_lines: 2000
+
+# If true, agents print the comment they would post to stdout and exit.
+# Useful for first-run testing. Override per-invocation with --dry-run.
+dry_run: false
+
+# Per-analyzer toggles. Disable any you don't want in a specific repo.
+# (E.g. a docs-only repo probably doesn't need the security analyzer.)
+analyzers:
+  summarize: true
+  review: true
+  tests_docs: true
+  security: true
+
+# Where to write the JSONL audit log. The workflow uploads this as an
+# artifact — don't commit it.
+audit_log_path: agent-audit.jsonl
