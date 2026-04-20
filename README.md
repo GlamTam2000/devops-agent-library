@@ -1,12 +1,34 @@
 # Pre Requisites
-1. pip install python 3.9.6 
-2. check repo has models allowed: curl -s -H "Authorization: Bearer YOUR_PAT" \
-  https://models.github.ai/catalog/models | head -c 200
-3. generate token and run : export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
-curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-  https://models.github.ai/catalog/models | head -c 300
 
-# if you see models, you are GOOD TO GO!
+Before you can run the agent locally or open a test PR, make sure you have:
+
+1. **Python 3.10 or newer** (the project won't install on 3.9). On macOS: `brew install python@3.13`. Verify with `python3 --version`.
+2. **git** and — optional but handy for opening PRs from the terminal — the **GitHub CLI** (`brew install gh`).
+3. A **GitHub personal access token** with the **`models:read`** scope (fine-grained tokens: *Account permissions  Models Read-only*).
+4. **GitHub Models enabled on your account/org.** Smoke-test the token:
+
+   ```bash
+   export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+   curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+     https://models.github.ai/catalog/models | jq '.[0].id'
+   ```
+
+   If you see a model id (e.g. `"openai/gpt-4.1"`), you're **good to go**. A 401 means the token is missing `models:read`; a 403 means Models isn't enabled on the account.
+
+5. **Install the agent and run the smoke tests** to confirm the local setup works end-to-end:
+
+   ```bash
+   python3 -m venv .venv && source .venv/bin/activate
+   pip install -e ".[dev]"
+   pytest
+   ```
+
+> **Don't paste the token into a file in this (public) repo.** The safe option on macOS is Keychain — store once, reload per session:
+> ```bash
+> security add-generic-password -a "$USER" -s devops-agents-pat -w    # store (prompts)
+> export GITHUB_TOKEN=$(security find-generic-password -a "$USER" -s devops-agents-pat -w)
+> ```
+
 
 # DevOps Agents
 A small, extensible library of AI-powered DevOps agents that run inside GitHub Actions using **GitHub Models** for inference. No external API keys, no separate auth, the workflow's built-in `GITHUB_TOKEN` is the only credential.
@@ -33,10 +55,10 @@ The code is deliberately set up to be copied into another GitHub org (e.g. a wor
 ## Project layout
 
 ```
-devops-agents/
+.
 ├── core/                          shared building blocks (import from here)
 │   ├── llm_client.py              OpenAI-compatible wrapper for GitHub Models
-│   ├── github_client.py           PR/comment operations via requests
+│   ├── github_client.py           PR/comment/merge operations via requests
 │   ├── base_agent.py              abstract base every agent inherits from
 │   ├── config.py                  .agentsrc.yml loader + env overrides
 │   ├── prompt_loader.py           loads .md prompts with {{var}} substitution
@@ -130,6 +152,7 @@ Everything in `.agentsrc.yml` can also be set via environment variable (useful f
 | `api_base_url`    | `AGENTS_API_BASE_URL`    | `https://models.github.ai/inference`        |
 | `max_diff_lines`  | `AGENTS_MAX_DIFF_LINES`  | `2000`                                      |
 | `dry_run`         | `AGENTS_DRY_RUN`         | `false`                                     |
+| `auto_merge`      | `AGENTS_AUTO_MERGE`      | `false`                                     |
 | `analyzers.*`     | (config file only)       | all `true`                                  |
 | `audit_log_path`  | (config file only)       | `agent-audit.jsonl`                         |
 
