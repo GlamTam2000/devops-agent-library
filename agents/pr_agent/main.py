@@ -72,6 +72,7 @@ class PRAgent(BaseAgent):
         )
 
         sections: dict[str, str] = {}
+        scan_findings: list = []  # kept for the auto-merge gate below
         cfg = self.config
 
         if cfg.analyzers.get("summarize", True):
@@ -111,7 +112,8 @@ class PRAgent(BaseAgent):
                 result = SecurityAnalyzer(self.llm, self.prompts).run(
                     diff=diff, max_lines=cfg.max_diff_lines
                 )
-                sections["security_scan"] = format_scan_findings(result["scan_findings"])  # type: ignore[arg-type]
+                scan_findings = result["scan_findings"]  # type: ignore[assignment]
+                sections["security_scan"] = format_scan_findings(scan_findings)  # type: ignore[arg-type]
                 sections["security_llm"] = result["llm_review"]  # type: ignore[assignment]
                 if result.get("llm_response"):
                     self._log("security", result["llm_response"])
@@ -137,7 +139,40 @@ class PRAgent(BaseAgent):
             self.audit.record_event(self.name, "comment_failed", error=str(exc))
             return 3
 
+        if cfg.auto_merge:
+            self._maybe_auto_merge(pr, scan_findings)
+
         return 0
+
+    def _maybe_auto_merge(self, pr: dict, scan_findings: list) -> None:
+        """Merge the PR iff it's mergeable and has zero HIGH-severity scan findings.
+
+        Branch-protection rules (required approvals, required checks) are enforced
+        server-side by GitHub — if unsatisfied, the merge call returns 405 and we
+        record the skip. That's the intended behaviour for protected repos.
+        """
+        high = [f for f in scan_findings if getattr(f, "severity", "").lower() == "high"]
+        if high:
+            reason = f"{len(high)} HIGH-severity scan finding(s)"
+            print(f"::notice::auto-merge skipped: {reason}")
+            self.audit.record_event(self.name, "auto_merge_skipped", reason=reason)
+            return
+
+        # pr["mergeable"] can be None when GitHub is still computing it
+        mergeable = pr.get("mergeable")
+        if mergeable is not True:
+            reason = f"mergeable={mergeable!r}"
+            print(f"::notice::auto-merge skipped: {reason}")
+            self.audit.record_event(self.name, "auto_merge_skipped", reason=reason)
+            return
+
+        try:
+            self.github.merge_pr(self.repo, self.pr_number, method="squash")
+            print("::notice::PR auto-merged by agent (squash)")
+            self.audit.record_event(self.name, "auto_merged", method="squash")
+        except Exception as exc:  # noqa: BLE001
+            print(f"::warning::auto-merge failed: {exc}")
+            self.audit.record_event(self.name, "auto_merge_failed", error=str(exc))
 
     def _log(self, analyzer: str, resp: object) -> None:
         """Log an LLM call. resp is an LLMResponse but we duck-type to avoid circular imports."""

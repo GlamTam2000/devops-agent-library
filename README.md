@@ -1,5 +1,14 @@
-# DevOps Agents
+# Pre Requisites
+1. pip install python 3.9.6 
+2. check repo has models allowed: curl -s -H "Authorization: Bearer YOUR_PAT" \
+  https://models.github.ai/catalog/models | head -c 200
+3. generate token and run : export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://models.github.ai/catalog/models | head -c 300
 
+# if you see models, you are GOOD TO GO!
+
+# DevOps Agents
 A small, extensible library of AI-powered DevOps agents that run inside GitHub Actions using **GitHub Models** for inference. No external API keys, no separate auth, the workflow's built-in `GITHUB_TOKEN` is the only credential.
 
 Starts with two agents:
