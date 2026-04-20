@@ -3,7 +3,7 @@
 Before you can run the agent locally or open a test PR, make sure you have:
 
 1. **Python 3.10 or newer** (the project won't install on 3.9). On macOS: `brew install python@3.13`. Verify with `python3 --version`.
-2. **git** and — optional but handy for opening PRs from the terminal — the **GitHub CLI** (`brew install gh`).
+2. **git** and — optional but handy for opening PRs from the terminal, the **GitHub CLI** (`brew install gh`).
 3. A **GitHub personal access token** with the **`models:read`** scope (fine-grained tokens: *Account permissions  Models Read-only*).
 4. **GitHub Models enabled on your account/org.** Smoke-test the token:
 
@@ -98,7 +98,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The smoke tests don't hit the network or call the LLM — they verify imports, config parsing, prompt substitution, the security scanner, and the comment builder.
+The smoke tests don't hit the network or call the LLM, they verify imports, config parsing, prompt substitution, the security scanner, and the comment builder.
 
 ---
 
@@ -135,7 +135,7 @@ and the `github_client.py` will pick up `GITHUB_API_URL` from the Actions runner
 The audit log and this README are designed as evidence that:
 
 - No code leaves the GitHub perimeter (GitHub Models runs inside GitHub's infrastructure).
-- No third-party secrets are stored — the only credential is the per-run `GITHUB_TOKEN`.
+- No third-party secrets are stored, the only credential is the per-run `GITHUB_TOKEN`.
 - Every LLM call is logged with model, hashes, and token counts.
 - Prompts are checked into the repo and version-controlled.
 - A kill-switch exists (`dry_run: true` in config, or disable the workflow file).
@@ -183,11 +183,11 @@ To add or tune a pattern, edit `agents/pr_agent/analyzers/patterns.py`. Each pat
 ## Extending: adding a new agent
 
 1. `mkdir agents/my_agent` with `main.py`, `__init__.py`, and a `prompts/` directory.
-2. Subclass `core.BaseAgent` — you get `self.llm`, `self.github`, `self.audit`, `self.config` for free.
+2. Subclass `core.BaseAgent` you get `self.llm`, `self.github`, `self.audit`, `self.config` for free.
 3. Add a workflow file in `.github/workflows/`.
 4. Add a `pr-agent`-style CLI entry in `pyproject.toml` if you want a console script.
 
-The shared `core/` is the whole point — each new agent should be ~100 lines plus prompts.
+The shared `core/` is the whole point, each new agent should be ~100 lines plus prompts.
 
 ---
 
