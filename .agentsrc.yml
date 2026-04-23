@@ -26,12 +26,18 @@ max_diff_lines: 2000
 # Useful for first-run testing. Override per-invocation with --dry-run.
 dry_run: false
 
-# If true, after posting the review comment the agent will merge the PR iff:
-#   - PR is mergeable (no git conflict)
-#   - zero HIGH-severity findings in the deterministic security scan
-# Branch-protection rules (required approvals / checks) are enforced server-side
-# by GitHub — on a protected repo this no-ops until a human approves.
-# Workflow permissions must include `contents: write` for this to work.
+# Auto-merge after the review comment is posted, iff:
+#   - PR is mergeable (no git conflicts)
+#   - Zero HIGH-severity findings in the deterministic security scan
+#
+# IMPORTANT: this merges via the GitHub API. On a branch with branch
+# protection enabled, GitHub will reject the merge until required
+# approvals and checks are satisfied — that's the intended safety net.
+# On an UNPROTECTED branch, these gates are the only defense. Only enable
+# on repos where branch protection is configured, or where you explicitly
+# want unattended merge for trusted changes.
+#
+# Requires the workflow's `permissions:` to include `contents: write`.
 auto_merge: true
 
 # Per-analyzer toggles. Disable any you don't want in a specific repo.
